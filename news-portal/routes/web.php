@@ -6,17 +6,22 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    return view('home');
+})->name('home');
 
 Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+    return view('admin.dashboard');
+})->middleware(['auth', 'role:admin|publisher'])->name('admin.dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::prefix('admin')->middleware(['auth','role:admin'])->group(function(){
+    Route::get('/users/create',[AdminArticleController::class, 'createUser'])->name('admin.users.create');
+    Route::post('/users',[AdminArticleController::class, 'storeuser'])->name('admin.users.store');
 });
 
 Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
