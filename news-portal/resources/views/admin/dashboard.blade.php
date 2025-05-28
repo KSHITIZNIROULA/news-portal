@@ -25,7 +25,7 @@
                     <h1 class="text-lg font-semibold text-gray-800">Admin Panel</h1>
                 </div>
                 <nav class="flex-1 px-2 py-4 space-y-1">
-                    <a href="#"
+                    <a href="{{ route('admin.dashboard') }}"
                         class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md group">
                         <svg class="w-5 h-5 mr-3 text-gray-500" fill="none" stroke="currentColor"
                             viewBox="0 0 24 24">
@@ -77,7 +77,7 @@
         </a>
         
         <!-- Categories (optional) -->
-        <a href="#" 
+        <a href="{{ route('admin.categories.index')}}" 
            class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-md transition-colors">
             Manage Categories
         </a>
@@ -90,15 +90,6 @@
     </div>
 </div>
                     </div>
-                    <a href="#"
-                        class="flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md group">
-                        <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-gray-500" fill="none"
-                            stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                        Articles
-                    </a>
                     <a href="#"
                         class="flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md group">
                         <svg class="w-5 h-5 mr-3 text-gray-400 group-hover:text-gray-500" fill="none"
@@ -215,17 +206,8 @@
                 <div class="max-w-7xl mx-auto">
                     <div class="bg-white overflow-hidden shadow rounded-lg">
                         <div class="px-4 py-5 sm:p-6">
-                            <h3 class="text-lg font-medium leading-6 text-gray-900">Welcome, {{ Auth::user()->name }}
-                            </h3>
-                            <div class="mt-2 max-w-xl text-sm text-gray-500">
-                                <p>You're logged in as
-                                    {{ Auth::user()->hasRole('admin') ? 'an admin' : 'a publisher' }}.</p>
-                            </div>
                             <div class="mt-5">
-                                <a href="#"
-                                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    Get started
-                                </a>
+                                @yield('content')
                             </div>
                         </div>
                     </div>
