@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminArticleController;
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
@@ -10,7 +11,7 @@ Route::get('/', function () {
 })->name('home');
 
 Route::get('/dashboard', function () {
-    return view('admin.dashboard');
+    return view('dashboard');
 })->middleware(['auth', 'role:admin|publisher'])->name('admin.dashboard');
 
 Route::middleware('auth')->group(function () {
@@ -36,5 +37,11 @@ Route::prefix('admin')->middleware(['auth', 'role:admin|publisher'])->group(func
     Route::delete('/articles/{article}', [AdminArticleController::class, 'destroy'])->name('admin.articles.destroy');
 });
 
+Route::prefix('admin')->middleware(['auth','role:admin'])->group(function(){
+    Route::get('/categories',[CategoryController::class,'index'])->name('admin.categories.index');
+    Route::get('/categories/create',[CategoryController::class, 'create'])->name('admin.categories.create');
+    Route::post('/categories',[CategoryController::class, 'store'])->name('admin.categories.store');
+    Route::delete('/categories/{category}',[CategoryController::class,'destroy'])->name('admin.categories.destroy');
+});
 
 require __DIR__.'/auth.php';
