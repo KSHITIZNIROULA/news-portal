@@ -12,6 +12,7 @@ class Article extends Model
     protected $casts=[
         'published_at' => 'datetime',
         'status' => 'string',
+        'image'=>'array',
     ];
     
     public function category()
