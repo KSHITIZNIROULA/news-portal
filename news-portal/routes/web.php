@@ -7,7 +7,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home');
+    return view('article.index');
 })->name('home');
 
 Route::get('/dashboard', function () {
@@ -25,7 +25,7 @@ Route::prefix('admin')->middleware(['auth','role:admin'])->group(function(){
     Route::post('/users',[AdminArticleController::class, 'storeuser'])->name('admin.users.store');
 });
 
-Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
+Route::get('/', [ArticleController::class, 'index'])->name('articles.index');//temperorily home address
 Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
 
 Route::prefix('admin')->middleware(['auth', 'role:admin|publisher'])->group(function () {
