@@ -33,7 +33,7 @@ public function store(LoginRequest $request): RedirectResponse
         return redirect()->intended(route('admin.dashboard', absolute: false));
     }
 
-    return redirect()->intended(route('home', absolute: false));
+    return redirect()->intended('/');
 }
 
     /**
