@@ -28,7 +28,7 @@ public function show(string $slug)
             ->with(['category', 'author'])
             ->firstOrFail();
 
-        return view('articles.show',['articles' => $article]);
+        return view('article.show',['article' => $article]);
     }
 
 }
