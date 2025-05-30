@@ -7,12 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 class Article extends Model
 {
 
-    protected $fillable = ['title', 'slug', 'content', 'category_id', 'author_id', 'published_at', 'image', 'status'];
+    protected $fillable = ['title', 'slug', 'content', 'category_id', 'author_id', 'published_at','status'];
     
     protected $casts=[
         'published_at' => 'datetime',
         'status' => 'string',
-        'image'=>'array',
     ];
     
     public function category()
@@ -31,6 +30,6 @@ class Article extends Model
     
     public function images()
     {
-        return $this->hasMany(Images::class);
+        return $this->hasMany(Image::class);
     }
 }
