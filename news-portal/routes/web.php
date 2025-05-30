@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminArticleController;
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProfileController;
@@ -20,9 +21,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::prefix('admin')->middleware(['auth','role:admin'])->group(function(){
-    Route::get('/users/create',[AdminArticleController::class, 'createUser'])->name('admin.users.create');
-    Route::post('/users',[AdminArticleController::class, 'storeuser'])->name('admin.users.store');
+Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+    Route::get('/users/create', [AdminUserController::class, 'create'])->name('admin.users.create');
+    Route::post('/users', [AdminUserController::class, 'store'])->name('admin.users.store');
+    Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
+    Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+    Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
 });
 
 Route::get('/', [ArticleController::class, 'index'])->name('articles.index');//temperorily home address
