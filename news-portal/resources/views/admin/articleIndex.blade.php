@@ -32,16 +32,18 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($articles as $article)
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="p-3">
-                                    @if($article->image && count($article->image) > 0)
-                                        <img src="{{ asset('storage/' . $article->image[0]) }}" alt="{{ $article->title }}" class="w-16 h-16 object-cover rounded">
-                                    @else
-                                        <div class="w-16 h-16 bg-gray-200 flex items-center justify-center">
-                                            <span class="text-gray-400 text-sm">No Image</span>
-                                        </div>
-                                    @endif
+@foreach($articles as $article)
+    <tr class="border-b hover:bg-gray-50">
+        <td class="p-3">
+            @if($article->images->isNotEmpty())
+                <img src="{{ asset('storage/' . $article->images->first()->path) }}" 
+                     alt="{{ $article->title }}"
+                     class="w-16 h-16 object-cover rounded">
+            @else
+                <div class="w-16 h-16 bg-gray-200 flex items-center justify-center">
+                    <span class="text-gray-400 text-sm">No Image</span>
+                </div>
+            @endif
                                 </td>
                                 <td class="p-3">
                                     <a href="{{ route('articles.show', $article->slug) }}" class="text-blue-600 hover:underline font-medium">
