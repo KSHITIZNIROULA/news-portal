@@ -9,12 +9,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class AdminArticleController extends Controller
 {
     public function index()
     {
-        $articles = Article::with(['category', 'author'])
+        $articles = Article::with(['category', 'author', 'images'])
             ->when(Auth::user()->hasRole('publisher'), function ($query) {
                 $query->where('author_id', Auth::id());
             })
@@ -36,13 +37,21 @@ class AdminArticleController extends Controller
             'category_id' => 'required|exists:categories,id',
             'status' => 'sometimes|in:draft,published',
             'published_at' => 'nullable|date',
-            'images.*' => 'nullable|image|max:9000',
+            'images.*' => 'nullable|image|max:2048', // Reduced to 2MB for testing
         ]);
 
         try {
+ // Generate unique slug
+        $slug = Str::slug($validated['title']);
+        $originalSlug = $slug;
+        $count = 1;
+        
+        while (Article::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $count++;
+        }
             $articleData = [
                 'title' => $validated['title'],
-                'slug' => Str::slug($validated['title']),
+                'slug' => $slug,
                 'content' => $validated['content'],
                 'category_id' => $validated['category_id'],
                 'author_id' => Auth::id(),
@@ -52,19 +61,18 @@ class AdminArticleController extends Controller
                     : null,
             ];
 
-            if ($request->hasFile('images')) {
-                $imagePaths = [];
-                foreach ($request->file('images') as $image) {
-                    $imagePaths[] = $image->store('articles', 'public');
-                }
-                $articleData['image'] = $imagePaths;
-            }
-
             $article = Article::create($articleData);
+
+            $request->hasFile('images');
+                foreach ($request->file('images') as $image) {
+                        $path = $image->store('articles', 'public');
+                        $article->images()->create(['path' => $path]);
+                }
 
             return redirect()->route('admin.articles.index')
                 ->with('success', 'Article created successfully!');
         } catch (\Exception $e) {
+            Log::error('Failed to create article:', ['error' => $e->getMessage()]);
             return back()
                 ->withInput()
                 ->with('error', 'Failed to create article: ' . $e->getMessage());
@@ -73,13 +81,11 @@ class AdminArticleController extends Controller
 
     public function show(Article $article)
     {
-        // Optional: Admins might want to preview the article as it appears publicly
         return redirect()->route('articles.show', $article->slug);
     }
 
     public function edit(Article $article)
     {
-        // Optional: Restrict publishers to their own articles
         if (Auth::user()->hasRole('publisher') && $article->author_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
@@ -90,7 +96,6 @@ class AdminArticleController extends Controller
 
     public function update(Request $request, Article $article)
     {
-        // Optional: Restrict publishers to their own articles
         if (Auth::user()->hasRole('publisher') && $article->author_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
@@ -101,7 +106,7 @@ class AdminArticleController extends Controller
             'category_id' => 'required|exists:categories,id',
             'status' => 'sometimes|in:draft,published',
             'published_at' => 'nullable|date',
-            'images.*' => 'nullable|image|max:9000',
+            'images.*' => 'nullable|image|max:2048',
         ]);
 
         try {
@@ -116,32 +121,33 @@ class AdminArticleController extends Controller
                     : null,
             ];
 
+            $article->update($articleData);
+
             // Handle new image uploads
-            $imagePaths = $article->image ?? [];
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
-                    $imagePaths[] = $image->store('articles', 'public');
+                    if ($image->isValid()) {
+                        $path = $image->store('articles', 'public');
+                        $article->images()->create(['path' => $path]);
+                    }
                 }
             }
 
             // Handle image removals
             if ($request->input('remove_images')) {
-                foreach ($request->input('remove_images') as $imageToRemove) {
-                    if ($imageToRemove && in_array($imageToRemove, $imagePaths)) {
-                        Storage::disk('public')->delete($imageToRemove);
-                        $imagePaths = array_filter($imagePaths, fn($path) => $path !== $imageToRemove);
+                foreach ($request->input('remove_images') as $imagePath) {
+                    $image = $article->images()->where('path', $imagePath)->first();
+                    if ($image) {
+                        Storage::disk('public')->delete($imagePath);
+                        $image->delete();
                     }
                 }
-                $imagePaths = array_values($imagePaths); // Reindex array
             }
-
-            $articleData['image'] = $imagePaths;
-
-            $article->update($articleData);
 
             return redirect()->route('admin.articles.index')
                 ->with('success', 'Article updated successfully!');
         } catch (\Exception $e) {
+            Log::error('Failed to update article:', ['error' => $e->getMessage()]);
             return back()
                 ->withInput()
                 ->with('error', 'Failed to update article: ' . $e->getMessage());
@@ -150,17 +156,14 @@ class AdminArticleController extends Controller
 
     public function destroy(Article $article)
     {
-        // Optional: Restrict publishers to their own articles
         if (Auth::user()->hasRole('publisher') && $article->author_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
 
         try {
             // Delete associated images
-            if ($article->image) {
-                foreach ($article->image as $image) {
-                    Storage::disk('public')->delete($image);
-                }
+            foreach ($article->images as $image) {
+                Storage::disk('public')->delete($image->path);
             }
 
             $article->delete();
@@ -168,6 +171,7 @@ class AdminArticleController extends Controller
             return redirect()->route('admin.articles.index')
                 ->with('success', 'Article deleted successfully!');
         } catch (\Exception $e) {
+            Log::error('Failed to delete article:', ['error' => $e->getMessage()]);
             return back()
                 ->with('error', 'Failed to delete article: ' . $e->getMessage());
         }
