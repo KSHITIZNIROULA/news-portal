@@ -4,13 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Images extends Model
+class Image extends Model
 {
-    protected $fillable = ['article_id', 'image_path'];
+    protected $fillable = ['article_id', 'path'];
     
-    protected $casts = [
-        'path' => 'json',
-    ];
 
     public function article()
     {
