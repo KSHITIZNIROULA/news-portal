@@ -10,25 +10,50 @@ class ArticleController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+public function index(Request $request)
 {
-        $articles = Article::where('status', 'published')
-            ->with(['category', 'author'])
-            ->latest('published_at')
-            ->paginate(10);
+    $categoryId = $request->query('category');
+    $articles = Article::where('status', 'published')
+        ->when($categoryId, function ($query) use ($categoryId) {
+            return $query->where('category_id', $categoryId);
+        })
+        ->with(['category', 'author', 'images'])
+        ->orderBy('published_at', 'desc')
+        ->paginate(9);
 
-        return view('article.index',['articles' => $articles]);
-    }
+    return view('article.index', compact('articles'));
+}
 
 
-public function show(string $slug)
+    public function show(string $slug)
     {
         $article = Article::where('slug', $slug)
             ->where('status', 'published')
             ->with(['category', 'author'])
             ->firstOrFail();
 
-        return view('article.show',['article' => $article]);
+        return view('article.show', ['article' => $article]);
     }
 
+    public function search(Request $request)
+    {
+        $query = $request->input('q');
+
+        $articles = Article::where('status', 'published')
+            ->when($query, function ($queryBuilder) use ($query) {
+                return $queryBuilder->where('title', 'like', "%{$query}%")
+                    ->orWhere('content', 'like', "%{$query}%")
+                    ->orWhereHas('category', function ($q) use ($query) {
+                        $q->where('name', 'like', "%{$query}%");
+                    })
+                    ->orWhereHas('author', function ($q) use ($query) {
+                        $q->where('name', 'like', "%{$query}%");
+                    });
+            })
+            ->with(['category', 'author', 'images'])
+            ->orderBy('published_at', 'desc')
+            ->paginate(9);
+        $articles->appends(['q' => $query]);
+        return view('article.search', compact('articles','query'));
+    }
 }
