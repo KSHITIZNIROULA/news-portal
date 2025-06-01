@@ -29,7 +29,9 @@ public function store(LoginRequest $request): RedirectResponse
     $request->session()->regenerate();
 
     $user = Auth::user();
-    if ($user->hasRole(['admin', 'publisher'])) {
+    if ($user->hasRole(['publisher'])) {
+        return redirect()->route('publisher.articles.dashboard');
+    }elseif ($user->hasRole(['admin', 'publisher'])) {
         return redirect()->intended(route('admin.dashboard', absolute: false));
     }
 
