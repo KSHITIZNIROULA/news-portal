@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignId('author_id')->constrained('users')->onDelete('cascade');
             $table->timestamp('published_at')->nullable();
             $table->enum('status', ['draft', 'published'])->default('draft');
+            $table->boolean('is_exclusive')->default(false);
             $table->timestamps();
         });
     }
