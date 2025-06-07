@@ -46,4 +46,27 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+public function subscribers()
+    {
+        return $this->hasMany(Subscription::class, 'publisher_id');
+    }
+
+    // Publishers this user is subscribed to
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class, 'user_id');
+    }
+
+    // Check if user is subscribed to a specific publisher
+    public function isSubscribedTo($publisher)
+    {
+        return $this->subscriptions()->where('publisher_id', $publisher->id)
+            ->where('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('expires_at')
+                      ->orWhere('expires_at', '>=', now());
+            })
+            ->exists();
+    }
+
 }
