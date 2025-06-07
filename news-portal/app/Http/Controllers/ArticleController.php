@@ -21,7 +21,14 @@ public function index(Request $request)
         ->orderBy('published_at', 'desc')
         ->paginate(9);
 
-    return view('article.index', compact('articles'));
+    $Latestarticles = Article::where('status', 'published')
+        ->when($categoryId, function ($query) use ($categoryId) {
+            return $query->where('category_id', $categoryId);
+        })
+        ->with(['category', 'author', 'images'])
+        ->orderBy('published_at', 'asc')
+        ->paginate(9);
+    return view('article.index', compact('articles','Latestarticles'));
 }
 
 
