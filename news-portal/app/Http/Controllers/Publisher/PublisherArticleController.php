@@ -5,131 +5,80 @@ namespace App\Http\Controllers\Publisher;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Category;
+use App\Models\Image;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 
 class PublisherArticleController extends Controller
 {
-    public function dashboard()
-    {
-        $articles = Article::where('author_id', Auth::id())
-            ->with(['category', 'images'])
-            ->paginate(10);
-        $totalArticles = Article::where('author_id', Auth::id())->count();
-        $publishedArticles = Article::where('author_id', Auth::id())->where('status', 'published')->count();
-        return view('publisher.dashboard', compact('articles', 'totalArticles', 'publishedArticles'));
-    }
+public function __construct()
+{
+    $this->middleware(['auth', 'role:publisher|admin']);
+}
+
+public function dashboard()
+{
+    $articles = Article::where('author_id', Auth::id())
+        ->with(['category', 'images'])
+        ->orderBy('created_at', 'desc')
+        ->paginate(10);
+    $totalArticles = Article::where('author_id', Auth::id())->count();
+    $publishedArticles = Article::where('author_id', Auth::id())->where('status', 'published')->count();
+    $exclusiveArticles = Article::where('author_id', Auth::id())->where('is_exclusive', true)->count();
+    
+    return view('publisher.dashboard', compact('articles', 'totalArticles', 'publishedArticles', 'exclusiveArticles'));
+}
 
     public function create()
     {
-        $categories = Category::all();
+        $categories = Category::select('id', 'name')->get();
         return view('publisher.articleCreate', compact('categories'));
     }
 
     public function store(Request $request)
     {
+        $this->authorize('publish exclusive articles'); // Spatie permission check
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'status' => 'sometimes|in:draft,published',
-            'published_at' => 'nullable|date',
-            'images.*' => 'nullable|image|max:2048', // Reduced to 2MB for testing
+            'category_id' => 'nullable|exists:categories,id',
+            'status' => 'required|in:draft,published',
+            'published_at' => 'nullable|date|after_or_equal:now',
+            'is_exclusive' => 'boolean',
+            'images.*' => 'nullable|image|mimes:jpeg,png|max:5120', // 5MB per image
         ]);
 
         try {
             // Generate unique slug
-            $slug = Str::slug($validated['title']);
-            $originalSlug = $slug;
+            $baseSlug = Str::slug($validated['title']);
+            $slug = $baseSlug;
             $count = 1;
-
             while (Article::where('slug', $slug)->exists()) {
-                $slug = $originalSlug . '-' . $count++;
+                $slug = $baseSlug . '-' . $count++;
             }
 
-            $articleData = [
+            $article = Article::create([
                 'title' => $validated['title'],
                 'slug' => $slug,
                 'content' => $validated['content'],
                 'category_id' => $validated['category_id'],
                 'author_id' => Auth::id(),
-                'status' => $validated['status'] ?? 'draft',
-                'published_at' => $validated['status'] === 'published'
-                    ? ($validated['published_at'] ?? now())
-                    : null,
-            ];
-
-            $article = Article::create($articleData);
+                'status' => $validated['status'],
+                'is_exclusive' => $request->boolean('is_exclusive', false),
+                'published_at' => $validated['status'] === 'published' ? ($validated['published_at'] ?? now()) : null,
+            ]);
 
             if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('articles', 'public');
-                    $article->images()->create(['path' => $path]);
+                $images = $request->file('images');
+                if (count($images) > 3) {
+                    return back()->withInput()->with('error', 'You can upload a maximum of 3 images.');
                 }
-            }
 
-            return redirect()->route('publisher.articles.dashboard')
-                ->with('success', 'Article created successfully!');
-        } catch (\Exception $e) {
-            Log::error('Failed to create article:', ['error' => $e->getMessage()]);
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to create article: ' . $e->getMessage());
-        }
-    }
-
-    public function show(Article $article)
-    {
-        if ($article->author_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
-        return view('publisher.articleShow', compact('article'));
-    }
-
-    public function edit(Article $article)
-    {
-        if ($article->author_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $categories = Category::all();
-        return view('publisher.articleEdit', compact('article', 'categories'));
-    }
-
-    public function update(Request $request, Article $article)
-    {
-        if ($article->author_id !== Auth::id()) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'category_id' => 'required|exists:categories,id',
-            'status' => 'sometimes|in:draft,published',
-            'published_at' => 'nullable|date',
-            'images.*' => 'nullable|image|max:2048',
-        ]);
-
-        try {
-            $articleData = [
-                'title' => $validated['title'],
-                'slug' => Str::slug($validated['title']),
-                'content' => $validated['content'],
-                'category_id' => $validated['category_id'],
-                'status' => $validated['status'] ?? 'draft',
-                'published_at' => $validated['status'] === 'published'
-                    ? ($validated['published_at'] ?? now())
-                    : null,
-            ];
-
-            $article->update($articleData);
-
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
+                foreach ($images as $image) {
                     if ($image->isValid()) {
                         $path = $image->store('articles', 'public');
                         $article->images()->create(['path' => $path]);
@@ -137,35 +86,123 @@ class PublisherArticleController extends Controller
                 }
             }
 
-            if ($request->input('remove_images')) {
-                foreach ($request->input('remove_images') as $imagePath) {
-                    $image = $article->images()->where('path', $imagePath)->first();
-                    if ($image) {
-                        Storage::disk('public')->delete($imagePath);
-                        $image->delete();
-                    }
-                }
-            }
-
             return redirect()->route('publisher.articles.dashboard')
-                ->with('success', 'Article updated successfully!');
+                ->with('success', 'Article created successfully!');
         } catch (\Exception $e) {
-            Log::error('Failed to update article:', ['error' => $e->getMessage()]);
-            return back()
-                ->withInput()
-                ->with('error', 'Failed to update article: ' . $e->getMessage());
+            Log::error('Failed to create article: ' . $e->getMessage(), ['user_id' => Auth::id()]);
+            return back()->withInput()->with('error', 'Failed to create article. Please try again.');
         }
     }
 
+    public function show(Article $article)
+    {
+        if ($article->author_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
+            abort(403, 'Unauthorized action.');
+        }
+        return view('publisher.articleShow', compact('article'));
+    }
+
+    public function edit(Article $article)
+    {
+        if ($article->author_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $categories = Category::select('id', 'name')->get();
+        return view('publisher.articleEdit', compact('article', 'categories'));
+    }
+
+public function update(Request $request, Article $article)
+{
+    if ($article->author_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
+        abort(403, 'Unauthorized action.');
+    }
+
+    // Only check permission if updating to exclusive
+    if ($request->boolean('is_exclusive')) {
+        $this->authorize('publish exclusive articles');
+    }
+
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'content' => 'required|string',
+        'category_id' => 'nullable|exists:categories,id',
+        'status' => 'required|in:draft,published',
+        'published_at' => 'nullable|date|after_or_equal:now',
+        'is_exclusive' => 'boolean',
+        'images.*' => 'nullable|image|mimes:jpeg,png|max:5120',
+        'remove_images' => 'nullable|array',
+        'remove_images.*' => 'string|exists:images,path',
+    ]);
+
+    try {
+        // Generate unique slug if title changed
+        $baseSlug = Str::slug($validated['title']);
+        $slug = $baseSlug;
+        $count = 1;
+        while (Article::where('slug', $slug)->where('id', '!=', $article->id)->exists()) {
+            $slug = $baseSlug . '-' . $count++;
+        }
+
+        $article->update([
+            'title' => $validated['title'],
+            'slug' => $slug,
+            'content' => $validated['content'],
+            'category_id' => $validated['category_id'],
+            'status' => $validated['status'],
+            'is_exclusive' => $request->boolean('is_exclusive'),
+            'published_at' => $validated['status'] === 'published' ? ($validated['published_at'] ?? now()) : null,
+        ]);
+
+        // Calculate remaining image slots after potential removals
+        $removeImages = $request->input('remove_images', []);
+        $currentImageCount = $article->images()->count() - count($removeImages);
+
+        if ($request->hasFile('images')) {
+            $newImages = $request->file('images');
+            if ($currentImageCount + count($newImages) > 3) {
+                return back()->withInput()->with('error', 'Total images cannot exceed 3.');
+            }
+
+            foreach ($newImages as $image) {
+                if ($image->isValid()) {
+                    $path = $image->store('articles', 'public');
+                    $article->images()->create(['path' => $path]);
+                }
+            }
+        }
+
+        if ($request->filled('remove_images')) {
+            foreach ($removeImages as $imagePath) {
+                $image = $article->images()->where('path', $imagePath)->first();
+                if ($image) {
+                    Storage::disk('public')->delete($image->path);
+                    $image->delete();
+                }
+            }
+        }
+        return redirect()->route('publisher.articles.dashboard')
+            ->with('success', 'Article updated successfully!');
+    } catch (\Exception $e) {
+        Log::error('Failed to update article: ' . $e->getMessage(), [
+            'user_id' => Auth::id(),
+            'article_id' => $article->id,
+            'request_data' => $request->except(['images', '_token']),
+        ]);
+        return back()->withInput()->with('error', 'Failed to update article. Please try again.');
+    }
+}
+
     public function destroy(Article $article)
     {
-        if ($article->author_id !== Auth::id()) {
+        if ($article->author_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
             abort(403, 'Unauthorized action.');
         }
 
         try {
             foreach ($article->images as $image) {
                 Storage::disk('public')->delete($image->path);
+                $image->delete();
             }
 
             $article->delete();
@@ -173,9 +210,8 @@ class PublisherArticleController extends Controller
             return redirect()->route('publisher.articles.dashboard')
                 ->with('success', 'Article deleted successfully!');
         } catch (\Exception $e) {
-            Log::error('Failed to delete article:', ['error' => $e->getMessage()]);
-            return back()
-                ->with('error', 'Failed to delete article: ' . $e->getMessage());
+            Log::error('Failed to delete article: ' . $e->getMessage(), ['user_id' => Auth::id(), 'article_id' => $article->id]);
+            return back()->with('error', 'Failed to delete article. Please try again.');
         }
     }
 }
