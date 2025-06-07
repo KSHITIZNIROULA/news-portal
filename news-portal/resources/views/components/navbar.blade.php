@@ -10,11 +10,12 @@
         <!-- Main Navigation Links (center-aligned) -->
         <div class="hidden md:flex items-center space-x-6">
             <a href="{{ route('articles.index') }}" class="text-gray-800 hover:text-blue-600 transition-colors font-medium">All Articles</a>
+            <a href="#" class="text-gray-800 hover:text-blue-600 transition-colors font-medium">For You</a>
 
             <!-- Categories Dropdown -->
             <div class="relative" x-data="{ open: false }">
                 <button @click="open = !open" class="flex items-center space-x-1 text-gray-800 hover:text-blue-600 transition-colors font-medium focus:outline-none">
-                    <span>Categories</span>
+                    <span>Portals</span>
                     <svg class="w-4 h-4 text-gray-500 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                     </svg>
@@ -33,35 +34,6 @@
                             {{ $category->name }}
                         </a>
                     @endforeach
-                </div>
-            </div>
-
-            <!-- Portals Dropdown (for multi-portal support) -->
-            <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open" class="flex items-center space-x-1 text-gray-800 hover:text-blue-600 transition-colors font-medium focus:outline-none">
-                    <span>Portals</span>
-                    <svg class="w-4 h-4 text-gray-500 transition-transform" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
-                <div x-show="open" @click.away="open = false"
-                     x-transition:enter="transition ease-out duration-100"
-                     x-transition:enter-start="opacity-0 scale-95"
-                     x-transition:enter-end="opacity-100 scale-100"
-                     x-transition:leave="transition ease-in duration-75"
-                     x-transition:leave-start="opacity-100 scale-100"
-                     x-transition:leave-end="opacity-0 scale-95"
-                     class="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1 z-50">
-                    @if(session('current_portal_id'))
-                        @foreach(\App\Models\Portal::all() as $portal)
-                            <a href="{{ route('switch.portal', $portal->id) }}"
-                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                {{ $portal->name }} {{ $portal->id === session('current_portal_id') ? '(Current)' : '' }}
-                            </a>
-                        @endforeach
-                    @else
-                        <span class="block px-4 py-2 text-sm text-gray-500">No portals available</span>
-                    @endif
                 </div>
             </div>
         </div>
@@ -142,8 +114,8 @@
                     </div>
                 @else
                     <div class="flex space-x-3">
-                        <a href="{{ route('login') }}" class="text-gray-700 hover:text-blue-600 transition-colors">Log in</a>
-                        <a href="{{ route('register') }}" class="text-gray-700 hover:text-blue-600 transition-colors">Register</a>
+                        <a href="{{ route('login') }}" class="text-gray-700 font-bold hover:text-blue-600 transition-colors">Log in</a>
+                        <a href="{{ route('register') }}" class="text-gray-700 font-bold hover:text-blue-600 transition-colors">Register</a>
                     </div>
                 @endauth
             </div>
