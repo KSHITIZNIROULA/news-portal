@@ -21,5 +21,21 @@ class UserSeeder extends Seeder
         ]);
         $role = Role::firstOrCreate(['name' => 'admin']); // Ensure the role exists
         $user->assignRole($role);
+
+        $user = User::factory()->create([
+            'name' => 'rammu',
+            'email' => 'publisher1@gmail.com',
+            'password' => Hash::make('123123123'),
+        ]);
+        $role = Role::firstOrCreate(['name' => 'publisher']); // Ensure the role exists
+        $user->assignRole($role);
+
+        $user = User::factory()->create([
+            'name' => 'dammu',
+            'email' => 'user1@gmail.com',
+            'password' => Hash::make('123123123'),
+        ]);
+        $role = Role::firstOrCreate(['name' => 'user']); // Ensure the role exists
+        $user->assignRole($role);
     }
 }
