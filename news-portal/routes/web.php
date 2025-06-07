@@ -5,15 +5,19 @@ use App\Http\Controllers\Admin\AdminPublisherController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Publisher\PublisherArticleController;
+use App\Http\Controllers\SubscriptionController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('home');
-})->name('home');
+// Route::get('/', function () {
+//     return view('home');
+// })->name('home');
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/', [ArticleController::class, 'index'])->name('articles.index');//temperorily home address
+// Route::get('/', [ArticleController::class, 'index'])->name('articles.index');//temperorily home address
+Route::get('/articles',[ArticleController::class, 'index'])->name('articles.index');
 Route::get('/articles/search', [ArticleController::class, 'search'])->name('articles.search');
 Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
 
@@ -34,15 +38,21 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
-});
-
-Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
+    
+    
     Route::get('/publishers', [AdminPublisherController::class, 'index'])->name('admin.publishers.index');
     Route::get('/publishers/create', [AdminPublisherController::class, 'create'])->name('admin.publishers.create');
     Route::post('/publishers', [AdminPublisherController::class, 'store'])->name('admin.publishers.store');
     Route::get('/publishers/{user}/edit', [AdminPublisherController::class, 'edit'])->name('admin.publishers.edit');
     Route::put('/publishers/{user}', [AdminPublisherController::class, 'update'])->name('admin.publishers.update');
     Route::delete('/publishers/{user}', [AdminPublisherController::class, 'destroy'])->name('admin.publishers.destroy');
+});
+
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::post('/publishers/{publisher}/subscribe', [SubscriptionController::class, 'subscribe'])->name('subscriptions.subscribe');
+    Route::post('/publishers/{publisher}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('subscriptions.unsubscribe');
 });
 
 Route::prefix('admin')->middleware(['auth', 'role:admin|publisher'])->group(function () {
