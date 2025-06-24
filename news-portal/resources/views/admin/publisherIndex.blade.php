@@ -1,6 +1,7 @@
 @extends('admin.dashboard')
 
 @section('content')
+
     <div class="container mx-auto p-6 max-w-6xl">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold text-gray-900">Manage Publishers</h1>

@@ -4,16 +4,7 @@
     <div class="container mx-auto p-4 max-w-lg">
         <h1 class="text-2xl font-bold mb-4 text-gray-800">Create New Article</h1>
         
-        <!-- Success/Error Messages -->
-        @if(session('success'))
-            <div class="bg-green-100 border border-green-400 text-green-700 px-3 py-2 rounded mb-3 text-sm">
-                {{ session('success') }}
-            </div>
-        @elseif(session('error'))
-            <div class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-3 text-sm">
-                {{ session('error') }}
-            </div>
-        @endif
+    
 
         <form action="{{ route('publisher.articles.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -129,7 +120,7 @@
                     id="images" 
                     class="w-full border rounded p-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 @error('images.*') border-red-500 @enderror" 
                     multiple 
-                    accept="image/*"
+                    accept="image/jpeg,image/png"
                 >
                 @error('images.*')
                     <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -144,5 +135,16 @@
             </div>
         </form>
     </div>
+
+<script>
+    document.getElementById('status').addEventListener('change', function () {
+        if (this.value === 'published') {
+            const input = document.getElementById('published_at');
+            if (!input.value) {
+                const now = new Date();
+                input.value = now.toISOString().slice(0, 16);
+            }
+        }
+    });
+</script>
 @endsection
-```
