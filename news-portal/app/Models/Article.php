@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Article extends Model
 {
 
-    protected $fillable = ['title', 'slug', 'content', 'category_id', 'author_id', 'published_at','status'];
+    protected $fillable = ['title', 'slug', 'content', 'category_id', 'author_id', 'published_at','status','is_exclusive'];
     
     protected $casts=[
         'published_at' => 'datetime',
