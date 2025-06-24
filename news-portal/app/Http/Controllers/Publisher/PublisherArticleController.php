@@ -14,23 +14,23 @@ use Illuminate\Support\Facades\Log;
 
 class PublisherArticleController extends Controller
 {
-public function __construct()
-{
-    $this->middleware(['auth', 'role:publisher|admin']);
-}
+    public function __construct()
+    {
+        $this->middleware(['auth', 'role:publisher|admin']);
+    }
 
-public function dashboard()
-{
-    $articles = Article::where('author_id', Auth::id())
-        ->with(['category', 'images'])
-        ->orderBy('created_at', 'desc')
-        ->paginate(10);
-    $totalArticles = Article::where('author_id', Auth::id())->count();
-    $publishedArticles = Article::where('author_id', Auth::id())->where('status', 'published')->count();
-    $exclusiveArticles = Article::where('author_id', Auth::id())->where('is_exclusive', true)->count();
-    
-    return view('publisher.dashboard', compact('articles', 'totalArticles', 'publishedArticles', 'exclusiveArticles'));
-}
+    public function dashboard()
+    {
+        $articles = Article::where('author_id', Auth::id())
+            ->with(['category', 'images'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        $totalArticles = Article::where('author_id', Auth::id())->count();
+        $publishedArticles = Article::where('author_id', Auth::id())->where('status', 'published')->count();
+        $exclusiveArticles = Article::where('author_id', Auth::id())->where('is_exclusive', true)->count();
+
+        return view('publisher.dashboard', compact('articles', 'totalArticles', 'publishedArticles', 'exclusiveArticles'));
+    }
 
     public function create()
     {
@@ -47,9 +47,17 @@ public function dashboard()
             'content' => 'required|string',
             'category_id' => 'nullable|exists:categories,id',
             'status' => 'required|in:draft,published',
-            'published_at' => 'nullable|date|after_or_equal:now',
             'is_exclusive' => 'boolean',
             'images.*' => 'nullable|image|mimes:jpeg,png|max:5120', // 5MB per image
+            'published_at' => [
+                'nullable',
+                'date',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->status === 'published' && $value && now()->gt($value)) {
+                        $fail('The publish date must be now or a future date.');
+                    }
+                },
+            ],
         ]);
 
         try {
@@ -68,12 +76,13 @@ public function dashboard()
                 'category_id' => $validated['category_id'],
                 'author_id' => Auth::id(),
                 'status' => $validated['status'],
-                'is_exclusive' => $request->boolean('is_exclusive', false),
+                'is_exclusive' => $request->has('is_exclusive'),
                 'published_at' => $validated['status'] === 'published' ? ($validated['published_at'] ?? now()) : null,
             ]);
 
-            if ($request->hasFile('images')) {
-                $images = $request->file('images');
+            $images=($request->file('images',[]));
+                // $images = $request->file('images');
+                if(is_array($images) && count($images)>0){
                 if (count($images) > 3) {
                     return back()->withInput()->with('error', 'You can upload a maximum of 3 images.');
                 }
@@ -86,6 +95,7 @@ public function dashboard()
                 }
             }
 
+            // dd($article);
             return redirect()->route('publisher.articles.dashboard')
                 ->with('success', 'Article created successfully!');
         } catch (\Exception $e) {
@@ -112,86 +122,88 @@ public function dashboard()
         return view('publisher.articleEdit', compact('article', 'categories'));
     }
 
-public function update(Request $request, Article $article)
-{
-    if ($article->author_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
-        abort(403, 'Unauthorized action.');
-    }
-
-    // Only check permission if updating to exclusive
-    if ($request->boolean('is_exclusive')) {
-        $this->authorize('publish exclusive articles');
-    }
-
-    $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'content' => 'required|string',
-        'category_id' => 'nullable|exists:categories,id',
-        'status' => 'required|in:draft,published',
-        'published_at' => 'nullable|date|after_or_equal:now',
-        'is_exclusive' => 'boolean',
-        'images.*' => 'nullable|image|mimes:jpeg,png|max:5120',
-        'remove_images' => 'nullable|array',
-        'remove_images.*' => 'string|exists:images,path',
-    ]);
-
-    try {
-        // Generate unique slug if title changed
-        $baseSlug = Str::slug($validated['title']);
-        $slug = $baseSlug;
-        $count = 1;
-        while (Article::where('slug', $slug)->where('id', '!=', $article->id)->exists()) {
-            $slug = $baseSlug . '-' . $count++;
+    public function update(Request $request, Article $article)
+    {
+        // Authorization check
+        if ($article->author_id !== Auth::id() && !Auth::user()->hasRole('admin')) {
+            abort(403, 'Unauthorized action.');
         }
 
-        $article->update([
-            'title' => $validated['title'],
-            'slug' => $slug,
-            'content' => $validated['content'],
-            'category_id' => $validated['category_id'],
-            'status' => $validated['status'],
-            'is_exclusive' => $request->boolean('is_exclusive'),
-            'published_at' => $validated['status'] === 'published' ? ($validated['published_at'] ?? now()) : null,
+        // Only check permission if updating to exclusive
+        if ($request->boolean('is_exclusive')) {
+            $this->authorize('publish exclusive articles');
+        }
+
+        // Validate request
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'category_id' => 'nullable|exists:categories,id',
+            'status' => 'required|in:draft,published',
+            'published_at' => 'nullable|date|after_or_equal:now',
+            'is_exclusive' => 'boolean',
+            'images.*' => 'nullable|image|mimes:jpeg,png|max:5120',
+            'remove_images' => 'nullable|array',
+            'remove_images.*' => 'string|exists:images,path',
         ]);
 
-        // Calculate remaining image slots after potential removals
-        $removeImages = $request->input('remove_images', []);
-        $currentImageCount = $article->images()->count() - count($removeImages);
-
-        if ($request->hasFile('images')) {
-            $newImages = $request->file('images');
-            if ($currentImageCount + count($newImages) > 3) {
-                return back()->withInput()->with('error', 'Total images cannot exceed 3.');
+        try {
+            // Update slug only if title changed
+            if ($article->title !== $validated['title']) {
+                $baseSlug = Str::slug($validated['title']);
+                $slug = $baseSlug;
+                $count = 1;
+                while (Article::where('slug', $slug)->where('id', '!=', $article->id)->exists()) {
+                    $slug = $baseSlug . '-' . $count++;
+                }
+                $validated['slug'] = $slug;
             }
 
-            foreach ($newImages as $image) {
-                if ($image->isValid()) {
-                    $path = $image->store('articles', 'public');
-                    $article->images()->create(['path' => $path]);
+            // Handle published_at date
+            $validated['published_at'] = $validated['status'] === 'published'
+                ? ($validated['published_at'] ?? now())
+                : null;
+
+            // Update article
+            $article->update($validated);
+
+            // Handle image removals first
+            if ($request->filled('remove_images')) {
+                foreach ($request->remove_images as $imagePath) {
+                    $image = $article->images()->where('path', $imagePath)->first();
+                    if ($image) {
+                        Storage::disk('public')->delete($image->path);
+                        $image->delete();
+                    }
                 }
             }
-        }
 
-        if ($request->filled('remove_images')) {
-            foreach ($removeImages as $imagePath) {
-                $image = $article->images()->where('path', $imagePath)->first();
-                if ($image) {
-                    Storage::disk('public')->delete($image->path);
-                    $image->delete();
+            // Handle new image uploads
+            if ($request->hasFile('images')) {
+                $remainingSlots = 3 - $article->images()->count();
+                if (count($request->images) > $remainingSlots) {
+                    return back()->withInput()->with('error', 'You can only upload ' . $remainingSlots . ' more images.');
+                }
+
+                foreach ($request->images as $image) {
+                    if ($image->isValid()) {
+                        $path = $image->store('articles', 'public');
+                        $article->images()->create(['path' => $path]);
+                    }
                 }
             }
+
+            return redirect()->route('publisher.articles.dashboard')
+                ->with('success', 'Article updated successfully!');
+        } catch (\Exception $e) {
+            Log::error('Failed to update article: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'article_id' => $article->id,
+                'request_data' => $request->except(['images', '_token']),
+            ]);
+            return back()->withInput()->with('error', 'Failed to update article. Please try again.');
         }
-        return redirect()->route('publisher.articles.dashboard')
-            ->with('success', 'Article updated successfully!');
-    } catch (\Exception $e) {
-        Log::error('Failed to update article: ' . $e->getMessage(), [
-            'user_id' => Auth::id(),
-            'article_id' => $article->id,
-            'request_data' => $request->except(['images', '_token']),
-        ]);
-        return back()->withInput()->with('error', 'Failed to update article. Please try again.');
     }
-}
 
     public function destroy(Article $article)
     {
