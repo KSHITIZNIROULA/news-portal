@@ -162,19 +162,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
-                    <div x-show="open" @click.away="open = false"
-                         class="mt-2 w-full bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1">
-                        @if(session('current_portal_id'))
-                            @foreach(\App\Models\Portal::all() as $portal)
-                                <a href="{{ route('switch.portal', $portal->id) }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                    {{ $portal->name }} {{ $portal->id === session('current_portal_id') ? '(Current)' : '' }}
-                                </a>
-                            @endforeach
-                        @else
-                            <span class="block px-4 py-2 text-sm text-gray-500">No portals available</span>
-                        @endif
-                    </div>
                 </div>
 
                 <!-- Search Link for Mobile -->

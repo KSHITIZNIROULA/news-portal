@@ -29,6 +29,7 @@
             @endisset
             @yield('content')
             @include('components.footer')
+            @include('components.alerts')
         </div>
     </body>
 </html>
