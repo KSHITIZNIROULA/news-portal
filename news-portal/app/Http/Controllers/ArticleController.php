@@ -63,4 +63,12 @@ public function index(Request $request)
         $articles->appends(['q' => $query]);
         return view('article.search', compact('articles','query'));
     }
+
+    public function forYou(){
+        $articles = Article::where('status','published')
+            ->with(['category','author','images'])
+            ->orderBy('published_at','desc')
+            ->paginate(6);
+        return view('article.foryou',compact('articles'));
+    }
 }
