@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AdminPublisherController;
 use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\EsewaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Publisher\PublisherArticleController;
@@ -17,9 +18,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 // Route::get('/', [ArticleController::class, 'index'])->name('articles.index');//temperorily home address
-Route::get('/articles',[ArticleController::class, 'index'])->name('articles.index');
+Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
 Route::get('/articles/search', [ArticleController::class, 'search'])->name('articles.search');
 Route::get('/articles/{slug}', [ArticleController::class, 'show'])->name('articles.show');
+Route::get('/foryou', [ArticleController::class, 'forYou'])->name('foryou');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -38,8 +40,8 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
     Route::put('/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
     Route::delete('/users/{user}', [AdminUserController::class, 'destroy'])->name('admin.users.destroy');
-    
-    
+
+
     Route::get('/publishers', [AdminPublisherController::class, 'index'])->name('admin.publishers.index');
     Route::get('/publishers/create', [AdminPublisherController::class, 'create'])->name('admin.publishers.create');
     Route::post('/publishers', [AdminPublisherController::class, 'store'])->name('admin.publishers.store');
@@ -53,6 +55,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::post('/publishers/{publisher}/subscribe', [SubscriptionController::class, 'subscribe'])->name('subscriptions.subscribe');
     Route::post('/publishers/{publisher}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('subscriptions.unsubscribe');
+    Route::get('/pay/esewa/{publisher}', [EsewaController::class, 'initiate'])->name('esewa.initiate');
+    Route::get('/pay/esewa/verify/{publisher}', [EsewaController::class, 'verification'])->name('esewa.verification');
+    Route::get('/pay/esewa/failure', [EsewaController::class, 'failure'])->name('esewa.failure');
 });
 
 Route::prefix('admin')->middleware(['auth', 'role:admin|publisher'])->group(function () {
@@ -64,11 +69,12 @@ Route::prefix('admin')->middleware(['auth', 'role:admin|publisher'])->group(func
     Route::delete('/articles/{article}', [AdminArticleController::class, 'destroy'])->name('admin.articles.destroy');
 });
 
-Route::prefix('admin')->middleware(['auth','role:admin'])->group(function(){
-    Route::get('/categories',[CategoryController::class,'index'])->name('admin.categories.index');
-    Route::get('/categories/create',[CategoryController::class, 'create'])->name('admin.categories.create');
-    Route::post('/categories',[CategoryController::class, 'store'])->name('admin.categories.store');
-    Route::delete('/categories/{category}',[CategoryController::class,'destroy'])->name('admin.categories.destroy');
+Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/categories', [CategoryController::class, 'index'])->name('admin.categories.index');
+    Route::get('/categories/create', [CategoryController::class, 'create'])->name('admin.categories.create');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('admin.categories.store');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('admin.categories.destroy');
+    Route::get('/subscriptions',[SubscriptionController::class,'index'])->name('admin.list');
 });
 
 // Publisher Routes (only for publishers)
@@ -80,7 +86,11 @@ Route::prefix('publisher')->middleware(['auth', 'role:publisher'])->group(functi
     Route::get('/articles/{article}/edit', [PublisherArticleController::class, 'edit'])->name('publisher.articles.edit');
     Route::put('/articles/{article}', [PublisherArticleController::class, 'update'])->name('publisher.articles.update');
     Route::delete('/articles/{article}', [PublisherArticleController::class, 'destroy'])->name('publisher.articles.destroy');
+    Route::get('/susbcriberslist', [SubscriptionController::class, 'index'])->name('subscribers.list');
 });
 
-
-require __DIR__.'/auth.php';
+// routes/web.php
+Route::post('/publisher/subscribers/{subscriber}/remove', [SubscriptionController::class, 'removeSubscriber'])
+    ->name('publisher.subscribers.remove')
+    ->middleware(['auth', 'role:publisher']);
+require __DIR__ . '/auth.php';
