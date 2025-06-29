@@ -1,11 +1,12 @@
 <?php
 
-namespace App;
+namespace App\Services;
 
+use App\PaymentGatewayInterface;
 use Exception;
 use Illuminate\Support\Facades\Http;
 
-class Esewa implements PaymentGatewayInterface
+class Esewa implements PaymentGatewayInterface 
 {
     public $inquiry;
     public $amount;
@@ -15,7 +16,7 @@ class Esewa implements PaymentGatewayInterface
 
     public function __construct()
     {
-        $this->base_url = env('APP_DEBUG') ? 'https://uat.esewa.com.np/api/epay/' : 'https://epay.esewa.com.np/api/epay/';
+        $this->base_url = env('APP_DEBUG') ? 'https://rc.esewa.com.np/api/epay/' : 'https://epay.esewa.com.np/api/epay/';
     }
 
     /**

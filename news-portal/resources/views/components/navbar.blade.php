@@ -10,7 +10,7 @@
         <!-- Main Navigation Links (center-aligned) -->
         <div class="hidden md:flex items-center space-x-6">
             <a href="{{ route('articles.index') }}" class="text-gray-800 hover:text-blue-600 transition-colors font-medium">All Articles</a>
-            <a href="#" class="text-gray-800 hover:text-blue-600 transition-colors font-medium">For You</a>
+            <a href="{{ route('foryou') }}" class="text-gray-800 hover:text-blue-600 transition-colors font-medium">For You</a>
 
             <!-- Categories Dropdown -->
             <div class="relative" x-data="{ open: false }">

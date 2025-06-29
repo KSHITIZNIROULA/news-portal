@@ -45,7 +45,7 @@
 
                     @auth
                         @if (!auth()->user()->isSubscribedTo($article->author))
-                            <form action="{{ route('subscriptions.subscribe',$article->author) }}" method="POST" class="ml-auto">
+                            <form action="{{ route('esewa.initiate',$article->author_id) }}" method="GET" class="ml-auto">
                                 @csrf
                                 <button type="submit"
                                     class="flex items-center text-sm bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full transition-colors">
