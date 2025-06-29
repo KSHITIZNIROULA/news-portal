@@ -31,6 +31,7 @@ class PublisherArticleController extends Controller
 
         return view('publisher.dashboard', compact('articles', 'totalArticles', 'publishedArticles', 'exclusiveArticles'));
     }
+    
 
     public function create()
     {
