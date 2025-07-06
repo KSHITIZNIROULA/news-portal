@@ -100,7 +100,7 @@
                             </div>
                         </div>
                         <div class="border-t border-slate-700 mt-8 pt-8 text-center text-slate-400">
-                            <p>© 2024 News-Portal. All rights reserved. Delivering truth, one story at a time.</p>
+                            <p>© 2025 News-Portal. All rights reserved. Delivering truth, one story at a time.</p>
                         </div>
                     </div>
                 </footer>

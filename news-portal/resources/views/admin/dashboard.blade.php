@@ -60,7 +60,12 @@
                                 All Articles</a>
                             <a href="{{ route('admin.articles.create') }}"
                                 class="block px-5 py-2.5 text-base text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">Create
-                                New Article</a>
+                                New Article
+                            </a>
+                            <a href="{{ route('fake') }}"
+                                class="block px-5 py-2.5 text-base text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+                                Check Fake News
+                            </a>
                         </div>
                     </div>
                     <!-- Other Links -->
@@ -157,6 +162,7 @@
             </main>
         </div>
     </div>
-</body>
 
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+</body>
 </html>
