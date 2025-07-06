@@ -48,6 +48,9 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/publishers/{user}/edit', [AdminPublisherController::class, 'edit'])->name('admin.publishers.edit');
     Route::put('/publishers/{user}', [AdminPublisherController::class, 'update'])->name('admin.publishers.update');
     Route::delete('/publishers/{user}', [AdminPublisherController::class, 'destroy'])->name('admin.publishers.destroy');
+    
+    Route::get('/fake', [ArticleController::class, 'fake'])->name('fake');
+    Route::post('/fake/{article}',[ArticleController::class, 'analyze'])->name('analyze');
 });
 
 
