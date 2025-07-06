@@ -22,6 +22,7 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
             $table->enum('status', ['draft', 'published'])->default('draft');
             $table->boolean('is_exclusive')->default(false);
+            $table->unsignedTinyInteger('truth_score')->nullable();
             $table->timestamps();
         });
     }
