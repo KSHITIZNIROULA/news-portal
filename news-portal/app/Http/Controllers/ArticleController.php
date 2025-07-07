@@ -23,12 +23,10 @@ class ArticleController extends Controller
             ->paginate(9);
 
         $Latestarticles = Article::where('status', 'published')
-            ->when($categoryId, function ($query) use ($categoryId) {
-                return $query->where('category_id', $categoryId);
-            })
-            ->with(['category', 'author', 'images'])
-            ->orderBy('published_at', 'asc')
-            ->paginate(9);
+            ->whereNotIn('id', $articles->pluck('id'))
+            ->latest('published_at')
+            ->limit(3)
+            ->get();
         return view('article.index', compact('articles', 'Latestarticles'));
     }
 
