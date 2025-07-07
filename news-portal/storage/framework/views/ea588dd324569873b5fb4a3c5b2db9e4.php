@@ -19,6 +19,16 @@
             <?php echo csrf_field(); ?>
             <?php echo method_field('PUT'); ?>
 
+<?php if($errors->any()): ?>
+    <div class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-4 text-sm">
+        <strong class="block mb-1">Please fix the following errors:</strong>
+        <ul class="list-disc list-inside text-sm">
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($error); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </ul>
+    </div>
+<?php endif; ?>
             <!-- Title -->
             <div class="mb-4">
                 <label for="title" class="block text-gray-700 font-medium text-sm mb-1">Title</label>
@@ -242,7 +252,7 @@ unset($__errorArgs, $__bag); ?>
                                 </div>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </div>
-                        <input type="hidden" name="remove_images[]" id="remove_images" value="">
+                        
                     </div>
                 <?php endif; ?>
             </div>

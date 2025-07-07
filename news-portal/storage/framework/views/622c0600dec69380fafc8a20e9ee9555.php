@@ -10,7 +10,7 @@
         <!-- Main Navigation Links (center-aligned) -->
         <div class="hidden md:flex items-center space-x-6">
             <a href="<?php echo e(route('articles.index')); ?>" class="text-gray-800 hover:text-blue-600 transition-colors font-medium">All Articles</a>
-            <a href="#" class="text-gray-800 hover:text-blue-600 transition-colors font-medium">For You</a>
+            <a href="<?php echo e(route('foryou')); ?>" class="text-gray-800 hover:text-blue-600 transition-colors font-medium">For You</a>
 
             <!-- Categories Dropdown -->
             <div class="relative" x-data="{ open: false }">
@@ -164,20 +164,6 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
-                    <div x-show="open" @click.away="open = false"
-                         class="mt-2 w-full bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 py-1">
-                        <?php if(session('current_portal_id')): ?>
-                            <?php $__currentLoopData = \App\Models\Portal::all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $portal): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <a href="<?php echo e(route('switch.portal', $portal->id)); ?>"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                                    <?php echo e($portal->name); ?> <?php echo e($portal->id === session('current_portal_id') ? '(Current)' : ''); ?>
-
-                                </a>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        <?php else: ?>
-                            <span class="block px-4 py-2 text-sm text-gray-500">No portals available</span>
-                        <?php endif; ?>
-                    </div>
                 </div>
 
                 <!-- Search Link for Mobile -->

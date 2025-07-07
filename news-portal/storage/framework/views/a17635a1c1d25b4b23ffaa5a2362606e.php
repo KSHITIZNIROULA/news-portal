@@ -5,18 +5,6 @@
             <a href="<?php echo e(route('admin.articles.create')); ?>"
                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-base">Create New Article</a>
         </div>
-        <?php if(session('success')): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4 text-base">
-                <?php echo e(session('success')); ?>
-
-            </div>
-        <?php endif; ?>
-        <?php if(session('error')): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-base">
-                <?php echo e(session('error')); ?>
-
-            </div>
-        <?php endif; ?>
         <?php if($articles->isEmpty()): ?>
             <p class="text-center text-gray-500 text-lg py-6">No articles available at the moment.</p>
         <?php else: ?>

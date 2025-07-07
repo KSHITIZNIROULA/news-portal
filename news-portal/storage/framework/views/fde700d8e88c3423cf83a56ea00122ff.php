@@ -2,18 +2,7 @@
     <div class="container mx-auto p-4 max-w-lg">
         <h1 class="text-2xl font-bold mb-4 text-gray-800">Create New Article</h1>
         
-        <!-- Success/Error Messages -->
-        <?php if(session('success')): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-3 py-2 rounded mb-3 text-sm">
-                <?php echo e(session('success')); ?>
-
-            </div>
-        <?php elseif(session('error')): ?>
-            <div class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded mb-3 text-sm">
-                <?php echo e(session('error')); ?>
-
-            </div>
-        <?php endif; ?>
+    
 
         <form action="<?php echo e(route('publisher.articles.store')); ?>" method="POST" enctype="multipart/form-data">
             <?php echo csrf_field(); ?>
@@ -214,7 +203,7 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>" 
                     multiple 
-                    accept="image/*"
+                    accept="image/jpeg,image/png"
                 >
                 <?php $__errorArgs = ['images.*'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
@@ -236,6 +225,17 @@ unset($__errorArgs, $__bag); ?>
             </div>
         </form>
     </div>
+
+<script>
+    document.getElementById('status').addEventListener('change', function () {
+        if (this.value === 'published') {
+            const input = document.getElementById('published_at');
+            if (!input.value) {
+                const now = new Date();
+                input.value = now.toISOString().slice(0, 16);
+            }
+        }
+    });
+</script>
 <?php $__env->stopSection(); ?>
-```
 <?php echo $__env->make('layouts.publisher', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH /home/bishnulimbu/Desktop/coding/news-portal/news-portal/resources/views/publisher/articleCreate.blade.php ENDPATH**/ ?>
